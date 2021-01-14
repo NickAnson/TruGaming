@@ -5,11 +5,14 @@
 #include "FileSystem/MapFileSystem.h"
 
 //this makes our program use high performance graphics by default
+
+#ifdef _WIN32
 extern "C" {
 __declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
 __declspec(
         dllexport) unsigned int AmdPowerXpressRequestHighPerformance = 0x1;
 }
+#endif
 
 
 int main() {
