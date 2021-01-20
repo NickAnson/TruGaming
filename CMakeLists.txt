@@ -17,15 +17,16 @@ else ()
 endif ()
 
 if (MSVC OR MSYS OR MINGW OR WIN32)
-    #FOR NOW WINDOW USES STATIC LIBRARIES
+    #FOR NOW WINDOW USES DYNAMIC SFML LIBRARIES and bundles std libs together so sent file only contains exe and sfml dll
     set(CMAKE_CXX_STANDARD_LIBRARIES "-static-libgcc -static-libstdc++ -lwsock32 -lws2_32 ${CMAKE_CXX_STANDARD_LIBRARIES}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bstatic,--whole-archive -Wl,--no-whole-archive")
 
     if (64BIT)
+        set(SFML_STATIC_LIBRARIES FALSE)
+
         set(SFML_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_WINDOWS/include")
         set(SFML_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_WINDOWS/lib")
         set(SFML_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_WINDOWS/lib/cmake/SFML/")
-        set(SFML_STATIC_LIBRARIES TRUE)
 
     else ()
         set(SFML_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/32Bit/OS_WINDOWS/include")
@@ -36,7 +37,7 @@ if (MSVC OR MSYS OR MINGW OR WIN32)
 elseif (APPLE AND NOT UNIX)
     message(FATAL_ERROR "Not supported on OSX at this time...")
 elseif (UNIX)
-    #FOR NOW LINUX USES DYNAMIC LIBRARIES
+    #FOR NOW LINUX USES DYNAMIC LIBRARIES as well
     if (64BIT)
 
         set(SFML_STATIC_LIBRARIES FALSE)
@@ -61,7 +62,7 @@ add_executable(${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/Source/Movement/PlayerMovement.h
         ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapFileSystem.cpp
         ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapFileSystem.h
-        ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp)
+        ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp Source/TextureManager/Tile.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${SFML_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC sfml-graphics sfml-window sfml-system)

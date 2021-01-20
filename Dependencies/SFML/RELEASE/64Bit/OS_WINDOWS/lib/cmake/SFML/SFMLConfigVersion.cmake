@@ -9,13 +9,6 @@
 # The variable CVF_VERSION must be set before calling configure_file().
 
 
-if (PACKAGE_FIND_VERSION_RANGE)
-  message(AUTHOR_WARNING
-    "`find_package()` specify a version range but the version strategy "
-    "(SameMajorVersion) of the module `${PACKAGE_FIND_NAME}` is incompatible "
-    "with this request. Only the lower endpoint of the range will be used.")
-endif()
-
 set(PACKAGE_VERSION "2.5.1")
 
 if(PACKAGE_VERSION VERSION_LESS PACKAGE_FIND_VERSION)
@@ -40,14 +33,9 @@ else()
 endif()
 
 
-# if the installed project requested no architecture check, don't perform the check
-if("FALSE")
-  return()
-endif()
-
 # if the installed or the using project don't have CMAKE_SIZEOF_VOID_P set, ignore it:
 if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "" OR "8" STREQUAL "")
-  return()
+   return()
 endif()
 
 # check that the installed version has the same 32/64bit-ness as the one which is currently searching:

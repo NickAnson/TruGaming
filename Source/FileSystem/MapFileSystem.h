@@ -15,10 +15,6 @@ public:
 
 		MapFileSystem(std::string fileName);
 
-		std::vector<sf::Texture> getTexture ( int x, int y );
-
-		sf::Texture getTexture ( int x, int y, int depth );
-
 		void setTexture(int x, int y, int depth, std::string textureName);
 
 		~MapFileSystem() {
@@ -26,10 +22,12 @@ public:
 		}
 
 private:
-		std::fstream fileOpened;
 
+		std::fstream fileOpened;
+		std::vector<int> test;
 		MapFileSystem()= default;
 
+    int getTexture(std::string textureName);
 };
 
 

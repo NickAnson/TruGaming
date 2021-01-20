@@ -17,8 +17,7 @@ __declspec(
 
 int main() {
 
-    MapFileSystem map1{"../Source/FileSystem/Map.json"};
-    map1.getTexture(0, 0, 0);
+    MapFileSystem map1{"../Source/FileSystem/chunk_1_1.json"};
 
     std::srand(
             std::time(nullptr)); // use current time as seed for random generator
@@ -67,28 +66,6 @@ void Application::test(sf::RenderWindow &window) {
             currentMosPosX.getPosition().y + 32
     );
 
-    short length = 40;
-    short height = 22;
-
-    unsigned int level[height * length];
-
-    for (int counter = 0; counter < (height * length); counter++) {
-        if(counter == 100) {
-            level[counter] = 100;
-        } else {
-            level[counter] = (182 % 800);
-        }
-
-    }
-
-
-    // create the tilemap from the level definition
-    Tilemap map;
-    if (!map.load("../Source/TextureManager/TileMap/atlas_48x.png",
-                  sf::Vector2u(48, 48), level, length, height)) {
-
-    }
-
     sf::Event event{};
 
 
@@ -131,7 +108,7 @@ void Application::test(sf::RenderWindow &window) {
         currentMosPosY.setString(std::to_string(mouse_world.y));
 
         window.setView(view);
-        window.draw(map);
+//        window.draw(map);
         window.draw(text);
         window.draw(currentMosPosX);
         window.draw(currentMosPosY);
