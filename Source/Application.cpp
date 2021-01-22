@@ -17,7 +17,6 @@ __declspec(
 
 int main() {
 
-    MapFileSystem map1{"../Source/FileSystem/chunk_1_1.json"};
 
     std::srand(
             std::time(nullptr)); // use current time as seed for random generator
@@ -31,7 +30,7 @@ int main() {
             "SFML works!",
             sf::Style::Default, settings);
 
-    window.setFramerateLimit(165);
+    window.setFramerateLimit(190);
 
     Application application;
     application.test(window);
@@ -108,11 +107,10 @@ void Application::test(sf::RenderWindow &window) {
         currentMosPosY.setString(std::to_string(mouse_world.y));
 
         window.setView(view);
-//        window.draw(map);
+        MapFileSystem map1{"../Source/FileSystem/chunk_1_1.json",&window};
         window.draw(text);
         window.draw(currentMosPosX);
         window.draw(currentMosPosY);
-
         window.display();
 
     }

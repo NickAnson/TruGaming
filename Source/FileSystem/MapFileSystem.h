@@ -8,24 +8,32 @@
 
 #include <SFML/Graphics/Texture.hpp>
 #include <fstream>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include "../../Dependencies/Nlohmann/json.hpp"
+#include "../TextureManager/Tile.h"
 
 class MapFileSystem {
 public:
 
-		MapFileSystem(std::string fileName);
 
-		void setTexture(int x, int y, int depth, std::string textureName);
+    MapFileSystem(const std::string &fileName, sf::RenderWindow *test);
 
-		~MapFileSystem() {
-			fileOpened.close();
-		}
+    void setTexture(int x, int y, int depth, std::string textureName);
+
+    ~MapFileSystem() {
+        fileOpened.close();
+    }
+    bool changed = false;
 
 private:
 
-		std::fstream fileOpened;
-		std::vector<int> test;
-		MapFileSystem()= default;
+    std::vector<Tile> tileMap;
+    std::vector<Tile> decTileMap;
+
+    std::fstream fileOpened;
+    std::vector<int> test;
+
+    MapFileSystem() = default;
 
     int getTexture(std::string textureName);
 };

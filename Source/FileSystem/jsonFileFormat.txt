@@ -1,6 +1,6 @@
 The Format of the tiles for json chunk tile is shown with an example:
 
-"grass 0 0 1920 1080"
+"grass 0 0 25 2"
 First is the type of tile, with names that are predefined
 Second is whether to animate the tile or not
 Third is the index ( or level) the block is currently on

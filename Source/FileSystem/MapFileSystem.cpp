@@ -5,58 +5,83 @@
 #include <iostream>
 #include "MapFileSystem.h"
 #include "../TextureManager/Tilemap.h"
+#include "../TextureManager/Tile.h"
+#include "../TextureManager/TileMap/TileToNumberConverter.h"
 
-MapFileSystem::MapFileSystem(std::string fileName) {
+unsigned int const chunkSize = 16;
 
-    std::cout << fileName << std::endl;
+MapFileSystem::MapFileSystem(const std::string &fileName,sf::RenderWindow * test) {
 
-    std::ifstream f;
-    f.open(fileName);
+        //In future we will optimize this only when a chunk is updated and another is removed not every time .
 
-    nlohmann::json jsonFile = nlohmann::json::parse(f);
+        std::ifstream f;
+        f.open(fileName);
+        nlohmann::json jsonFile = nlohmann::json::parse(f);
+        f.close();
 
-    auto arrayOfTiles = jsonFile.at("ids");
+        if (jsonFile.is_null()) {
+            std::cout << "FAILED TO OPEN JSON FILE" << std::endl;
+            std::exit(-1);
+        }
 
-    for (auto it = arrayOfTiles.begin(); it != arrayOfTiles.end();) {
-        std::cout << "ID: " << it.value() << std::endl;
-        it++;
-        std::cout << "ANIMATED: " << it.value() << std::endl;
-        it++;
-        std::cout << "INDEX_LEVEL: " << it.value() << std::endl;
-        it++;
-        std::cout << "xChunkTile: " << it.value() << std::endl;
-        it++;
-        std::cout << "yChunkTile: " << it.value() << std::endl;
-        it++;
+        std::string idName;
+        char animated;
+        short int index;
+        unsigned short int xTile;
+        unsigned short int yTile;
+
+        tileMap.clear();
+        decTileMap.clear();
+
+        bool collided = false;
+
+
+        for (auto it = jsonFile.at("ids").begin(); it != jsonFile.at("ids").end();) {
+            idName = it->get_ref<std::string &>();
+            it++;
+            animated = (it->get_ref<std::string &>())[0];
+            it++;
+            index = std::stoi(it->get_ref<std::string &>());
+            it++;
+            xTile = std::stoi(it->get_ref<std::string &>());
+            it++;
+            yTile = std::stoi(it->get_ref<std::string &>());
+            it++;
+
+            if (!tileMap.empty()) {
+                for (auto &i : tileMap) {
+                    if (i.getBlockNumberX() == xTile && i.getBlockNumberY() == yTile) {
+                        //this will be decTileMap in the future, but for testing with copy and pasted data it is detected as repeated data so this is switched temporarily
+                        tileMap.emplace_back(idName, animated, index, xTile, yTile);
+                        collided = true;
+                        break;
+                    }
+                }
+            }
+            if (!collided) {
+                tileMap.emplace_back(idName, animated, index, xTile, yTile);
+            } else {
+                collided = false;
+            }
+    }
+    unsigned int level[chunkSize * chunkSize];
+
+    for(int i = 0; i < tileMap.size();i++) {
+        level[i] = getTexture(tileMap.at(i).getTileName());
     }
 
-
-    if (jsonFile.is_null()) {
-        std::cout << "FAILED TO OPEN JSON FILE" << std::endl;
-        std::exit(-1);
-    }
-
-    short sqaure = 15;
-    unsigned int level[sqaure * sqaure];
-
-    for (int i = 0; i < arrayOfTiles.size(); i++) {
-        level[i] = getTexture(arrayOfTiles[i]);
-    }
-
-    // create the tilemap from the level definition
     Tilemap map;
     if (!map.load("../Source/TextureManager/TileMap/atlas_48x.png",
-                  sf::Vector2u(48, 48), level, sqaure, sqaure)) {
-
+                  sf::Vector2u(48, 48), level, chunkSize, chunkSize)) {
     }
+    test->draw(map);
 }
 
+
+
 int MapFileSystem::getTexture(std::string textureName) {
-    if (textureName == "grass") {
-        return 1;
-    } else {
-        return 0;
-    }
+    TileToNumberConverter & tileConverter = TileToNumberConverter::getInstance();
+    return tileConverter.findValue(textureName);
 
 }
 

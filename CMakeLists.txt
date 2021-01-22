@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(TruGaming)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(CMAKE_CXX_FLAGS_DEBUG "-Os")
 set(CMAKE_CXX_FLAGS_RELEASE "-Os")
@@ -62,7 +62,7 @@ add_executable(${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/Source/Movement/PlayerMovement.h
         ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapFileSystem.cpp
         ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapFileSystem.h
-        ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp Source/TextureManager/Tile.h)
+        ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp Source/TextureManager/Tile.h Source/TextureManager/TileMap/TileToNumberConverter.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${SFML_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC sfml-graphics sfml-window sfml-system)
