@@ -38,7 +38,7 @@ public:
         nlohmann::json converter = nlohmann::json::parse(f);
         f.close();
         if(converter.is_null()) {
-            std::cout << "BAD FILE PATH 1001" << std::endl;
+//            std::cout << "BAD FILE PATH 1001" << std::endl;
         }
 
         for (auto it = converter.begin(); it != converter.end();it++) {

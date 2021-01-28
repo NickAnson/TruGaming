@@ -252,7 +252,7 @@ private:
 /// \class sf::RenderTexture
 /// \ingroup graphics
 ///
-/// sf::RenderTexture is the little brother of sf::RenderWindow.
+/// sf::RenderTexture is the little brother of sf::window->
 /// It implements the same 2D drawing and OpenGL-related functions
 /// (see their base class sf::RenderTarget for more details),
 /// the difference is that the result is stored in an off-screen

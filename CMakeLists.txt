@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.10)
 project(TruGaming)
 set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-Os")
 set(CMAKE_CXX_FLAGS_RELEASE "-Os")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Executable/")
@@ -16,12 +15,14 @@ else ()
     set(ARCHITECTURE "x64")
 endif ()
 
-if (MSVC OR MSYS OR MINGW OR WIN32)
+if (MSVC OR MSYS OR WIN32)
     #FOR NOW WINDOW USES DYNAMIC SFML LIBRARIES and bundles std libs together so sent file only contains exe and sfml dll
-    set(CMAKE_CXX_STANDARD_LIBRARIES "-static-libgcc -static-libstdc++ -lwsock32 -lws2_32 ${CMAKE_CXX_STANDARD_LIBRARIES}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bstatic,--whole-archive -Wl,--no-whole-archive")
 
     if (64BIT)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static")
+        set(CMAKE_CXX_STANDARD_LIBRARIES "-static-libgcc -static-libstdc++ -lpthread -lwsock32 -lws2_32 ${CMAKE_CXX_STANDARD_LIBRARIES}")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Bstatic,--whole-archive -Wl,--no-whole-archive")
+
         set(SFML_STATIC_LIBRARIES FALSE)
 
         set(SFML_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_WINDOWS/include")
@@ -35,23 +36,20 @@ if (MSVC OR MSYS OR MINGW OR WIN32)
     endif ()
     find_package(SFML 2.5.1 REQUIRED COMPONENTS network system window graphics audio main)
 elseif (APPLE AND NOT UNIX)
-    message(FATAL_ERROR "Not supported on OSX at this time...")
+    message(FATAL_ERROR "1Not supported on OSX at this time...")
 elseif (UNIX)
     #FOR NOW LINUX USES DYNAMIC LIBRARIES as well
-    if (64BIT)
+    set(CMAKE_C_FLAGS -m64)
+    set(CMAKE_CXX_FLAGS -m64)
 
-        set(SFML_STATIC_LIBRARIES FALSE)
+    set(SFML_STATIC_LIBRARIES FALSE)
 
-        set(SFML_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_LINUX/include")
-        set(SFML_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_LINUX/lib")
-        set(SFML_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_LINUX/lib/cmake/SFML/")
+    set(SFML_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_LINUX/include")
+    set(SFML_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_LINUX/lib")
+    set(SFML_DIR "${CMAKE_SOURCE_DIR}/Dependencies/SFML/RELEASE/64Bit/OS_LINUX/lib/cmake/SFML/")
 
-        find_package(SFML 2.5.1 REQUIRED COMPONENTS network system window graphics audio)
+    find_package(SFML 2.5.1 REQUIRED COMPONENTS network system window graphics audio)
 
-    else ()
-        message(FATAL_ERROR "Not supported on 32Bit Linux at this time...")
-
-    endif ()
 endif ()
 
 add_executable(${PROJECT_NAME}
@@ -60,9 +58,9 @@ add_executable(${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/Source/TextureManager/Tilemap.h
         ${CMAKE_SOURCE_DIR}/Source/Movement/PlayerMovement.cpp
         ${CMAKE_SOURCE_DIR}/Source/Movement/PlayerMovement.h
-        ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapFileSystem.cpp
-        ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapFileSystem.h
-        ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp Source/TextureManager/Tile.h Source/TextureManager/TileMap/TileToNumberConverter.h)
+        ${CMAKE_SOURCE_DIR}/Source/FileSystem/GameChunk.cpp
+        ${CMAKE_SOURCE_DIR}/Source/FileSystem/GameChunk.h
+        ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp Source/TextureManager/Tile.h Source/TextureManager/TileMap/TileToNumberConverter.h Source/FileSystem/MapEditor.cpp Source/FileSystem/MapEditor.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${SFML_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} PUBLIC sfml-graphics sfml-window sfml-system)

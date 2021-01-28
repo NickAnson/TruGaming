@@ -11,19 +11,19 @@
 class Tilemap : public sf::Drawable, public sf::Transformable {
 public:
 
-		bool load (
-				const std::string &tileset, sf::Vector2u tileSize,
-				const unsigned int *tiles, unsigned int width, unsigned int height ) {
-			// load the tileset texture
-			if ( !m_tileset.loadFromFile( tileset )) {
-				return false;
-			}
+		bool load(
+                const std::string &tileset, sf::Vector2u tileSize,
+                const char *tiles, unsigned int width, unsigned int height) {
+            // load the tileset texture
+            if (!m_tileset.loadFromFile(tileset)) {
+                return false;
+            }
 
-			// resize the vertex array to fit the level size
-			m_vertices.setPrimitiveType( sf::Quads );
-			m_vertices.resize( width * height * 4 );
+            // resize the vertex array to fit the level size
+            m_vertices.setPrimitiveType(sf::Quads);
+            m_vertices.resize(width * height * 4);
 
-			// populate the vertex array, with one quad per tile
+            // populate the vertex array, with one quad per tile
 			for ( unsigned int i = 0; i < width; ++i ) {
 				for ( unsigned int j = 0; j < height; ++j ) {
 					// get the current tile number

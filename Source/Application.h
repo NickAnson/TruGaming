@@ -6,13 +6,36 @@
 #define TRUGAMING_APPLICATION_H
 
 
-class Application
-{
-public:
-    float movementSpeed = 4.0f;
+#include "FileSystem/GameChunk.h"
 
-    void test(sf::RenderWindow & renderWindow);
+class Application {
+public:
+    Application(sf::RenderWindow &renderWindow) {
+        window = &renderWindow;
+    }
+
+    void test();
+
+
 private:
+    bool udapteChunks = true;
+
+    sf::RenderWindow *window;
+
+    void chunkManagement();
+
+    std::vector<sf::Vector2i> conversion;
+    const std::vector<sf::Vector2i> rulesInitial = {sf::Vector2i(3, 3)};
+
+    std::vector<GameChunk> chunksVisible;
+
+    std::string convertChunkLocationToName(sf::Vector2<int> chunk);
+
+    void rules();
+
+    void intitalRules();
+
+
 };
 
 
