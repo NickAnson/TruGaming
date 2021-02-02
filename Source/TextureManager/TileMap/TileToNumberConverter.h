@@ -17,11 +17,15 @@ public:
         return instance;
     }
 
+    sf::Texture m_tileset;
+    sf::VertexArray m_vertices;
+
 private:
     std::ifstream f;
     std::string tileMapToNumberLocation = "../Source/TextureManager/TileMap/tileToNumber.json";
 
     bool initialized = false;
+
     TileToNumberConverter() {
 
         setup();
@@ -37,13 +41,15 @@ public:
         f.open(tileMapToNumberLocation);
         nlohmann::json converter = nlohmann::json::parse(f);
         f.close();
-        if(converter.is_null()) {
+        if (converter.is_null()) {
 //            std::cout << "BAD FILE PATH 1001" << std::endl;
         }
 
-        for (auto it = converter.begin(); it != converter.end();it++) {
+        for (auto it = converter.begin(); it != converter.end(); it++) {
             test[it.key()] = it.value();
         }
+        m_tileset.loadFromFile("../Source/TextureManager/TileMap/atlas_48x.png");
+
     }
 
     int findValue(std::string valueToFind) {

@@ -13,29 +13,29 @@ public:
     Application(sf::RenderWindow &renderWindow) {
         window = &renderWindow;
     }
-
     void test();
 
 
 private:
-    bool udapteChunks = true;
 
     sf::RenderWindow *window;
 
     void chunkManagement();
 
     std::vector<sf::Vector2i> conversion;
-    const std::vector<sf::Vector2i> rulesInitial = {sf::Vector2i(3, 3)};
 
-    std::vector<GameChunk> chunksVisible;
-
-    std::string convertChunkLocationToName(sf::Vector2<int> chunk);
+    GameChunk viewableChunk[48];
 
     void rules();
 
-    void intitalRules();
+    bool insideView(const sf::View &view, sf::Vector2i point);
 
+    sf::FloatRect viewCoorindates;
 
+    sf::FloatRect &getViewCoordinates(const sf::View &view);
+
+    bool newChunks = true;
+    sf::Vector2i deltaOffSet{0, 0};
 };
 
 

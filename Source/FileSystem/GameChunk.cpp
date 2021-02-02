@@ -2,14 +2,12 @@
 // Created by nicka on 1/1/2021.
 //
 
-#include <sstream>
 #include <filesystem>
+#include <iostream>
 #include "GameChunk.h"
-#include "../TextureManager/TileMap/TileToNumberConverter.h"
 
 
-std::vector<Tile> GameChunk::convertToTile(const std::string &fileName) {
-    std::vector<Tile> chunkTiles;
+void GameChunk::convertToTile() {
 
     std::ifstream f(fileName);
     std::string line;
@@ -26,60 +24,46 @@ std::vector<Tile> GameChunk::convertToTile(const std::string &fileName) {
         getline(ss, item, ' ');
         signed short int param3 = std::stoi(item);
 
-        chunkTiles.emplace_back(Tile(param1, param2, param3, i));
+        chunks.emplace_back(Tile(param1, param2, param3, i));
         i++;
 
-        ss.clear();
     }
-
-
     f.close();
 
-    return chunkTiles;
 }
 
 
-GameChunk::GameChunk(const std::string &fileName, sf::RenderWindow &test, sf::Vector2i &chunkNumberTemp) {
+GameChunk::GameChunk(sf::RenderWindow &renderWindow, std::pair<signed short int, signed short int> chunkToLoadTemp) {
+    tileMapRenderWindow = &renderWindow;
+
+
+    fileName = "../Source/FileSystem/" +
+               std::to_string(int(renderWindow.getView().getCenter().x / 1536) + chunkToLoadTemp.first) + "_" +
+               std::to_string(int(renderWindow.getView().getCenter().y / 1536) + chunkToLoadTemp.second) +
+               ".chunk";
+
 
     if (!std::filesystem::exists(fileName)) {
         std::filesystem::copy("../Source/FileSystem/x_x.chunk", fileName);
     }
 
-    tileMapRenderWindow = &test;
-    tileMapLocation = {chunkNumberTemp.x * 1536, chunkNumberTemp.y * 1536};
-    tileMap = fileName;
+    convertToTile();
 
-    map.setPosition(tileMapLocation.x, tileMapLocation.y);
-    setChunkNumber(chunkNumberTemp);
+    for (unsigned short int i = 0; i < chunks.size(); i++) {
+        level[i] = TileToNumberConverter::getInstance().findValue(chunks.at(i).getTileName());
+    }
+
+    map.load(level);
+    map.setPosition(int(renderWindow.getView().getCenter().x / 1536 + chunkToLoadTemp.first) * 1536,
+                    int(renderWindow.getView().getCenter().y / 1536 + chunkToLoadTemp.second) * 1536);
+
 }
 
 
 void GameChunk::draw() {
-
-    if (update) {
-        chunks = convertToTile(tileMap);
-        for (int i = 0; i < chunks.size(); i++) {
-            level[i] = getTexture(chunks.at(i).getTileName());
-        }
-        if (!map.load("../Source/TextureManager/TileMap/atlas_48x.png",
-                      sf::Vector2u(48, 48), level, chunkSize, chunkSize)) {
-        }
-        update = false;
-    }
     tileMapRenderWindow->draw(map);
 }
 
-int GameChunk::getTexture(std::basic_string<char> textureName) {
-    TileToNumberConverter &tileConverter = TileToNumberConverter::getInstance();
-    return tileConverter.findValue(std::move(textureName));
 
-}
 
-sf::Vector2i GameChunk::getChunkNumber() {
-    return chunkNumber;
-}
-
-void GameChunk::setChunkNumber(sf::Vector2i &number) {
-    chunkNumber = number;
-}
 

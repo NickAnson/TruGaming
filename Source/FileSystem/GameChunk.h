@@ -13,36 +13,27 @@
 #include "../TextureManager/Tile.h"
 #include "../TextureManager/Tilemap.h"
 
-unsigned short int const chunkSize = 32;
 
 class GameChunk {
 public:
 
 
-    GameChunk(const std::string &fileName, sf::RenderWindow &test, sf::Vector2<int> &chunkNumber);
+    GameChunk(sf::RenderWindow &test, std::pair<signed short int, signed short int> chunkToLoadTemp);
 
     void draw();
 
-    sf::Vector2i getChunkNumber();
-
-    void setChunkNumber(sf::Vector2i &number);
+    GameChunk() = default;
 
 private:
 
-    sf::Vector2i chunkNumber;
-    std::string tileMap;
-    bool update = true;
-    char level[chunkSize * chunkSize];
+    char level[32 * 32];
     Tilemap map;
     sf::RenderWindow *tileMapRenderWindow;
     std::vector<Tile> chunks;
-    sf::Vector2i tileMapLocation;
 
-    static std::vector<Tile> convertToTile(const std::string &fileName);
+    void convertToTile();
 
-    GameChunk() = default;
-
-    static int getTexture(std::basic_string<char> textureName);
+    std::string fileName;
 
 };
 
