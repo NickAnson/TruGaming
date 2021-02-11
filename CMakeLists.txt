@@ -58,13 +58,13 @@ add_executable(${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/Source/TextureManager/Tilemap.h
         ${CMAKE_SOURCE_DIR}/Source/Movement/PlayerMovement.cpp
         ${CMAKE_SOURCE_DIR}/Source/Movement/PlayerMovement.h
-        ${CMAKE_SOURCE_DIR}/Source/FileSystem/GameChunk.cpp
-        ${CMAKE_SOURCE_DIR}/Source/FileSystem/GameChunk.h
+        ${CMAKE_SOURCE_DIR}/Source/GameManager/GameChunk.cpp
+        ${CMAKE_SOURCE_DIR}/Source/GameManager/GameChunk.h
         ${CMAKE_SOURCE_DIR}/Dependencies/Nlohmann/json.hpp
         ${CMAKE_SOURCE_DIR}/Source/TextureManager/Tile.h
-        ${CMAKE_SOURCE_DIR}/Source/TextureManager/TileMap/TileToNumberConverter.h
-        ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapEditor.cpp
-        ${CMAKE_SOURCE_DIR}/Source/FileSystem/MapEditor.h
+        ${CMAKE_SOURCE_DIR}/Source/Constants/Singleton.h
+        ${CMAKE_SOURCE_DIR}/Source/GameManager/MapEditor/MapEditor.cpp
+        ${CMAKE_SOURCE_DIR}/Source/GameManager/MapEditor/MapEditor.h
         )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${SFML_INCLUDE_DIR})

@@ -6,7 +6,7 @@
 #define TRUGAMING_APPLICATION_H
 
 
-#include "FileSystem/GameChunk.h"
+#include "GameManager/GameChunk.h"
 
 class Application {
 public:
@@ -30,11 +30,9 @@ private:
 
     bool insideView(const sf::View &view, sf::Vector2i point);
 
-    sf::FloatRect viewCoorindates;
 
     sf::FloatRect &getViewCoordinates(const sf::View &view);
 
-    bool newChunks = true;
     sf::Vector2i deltaOffSet{0, 0};
 };
 

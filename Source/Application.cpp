@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include "Application.h"
 #include "Movement/PlayerMovement.h"
+#include "GameManager/MapEditor/MapEditor.h"
 
 //this makes our program use high performance graphics by default on systems with more than one gpu
 #ifdef _WIN32
@@ -19,14 +20,13 @@ int main() {
     sf::ContextSettings settings;
 
     sf::RenderWindow window(
-            sf::VideoMode(
-                    sf::VideoMode::getDesktopMode().width,
-                    sf::VideoMode::getDesktopMode().height
-            ),
+            Singleton::getInstance().computerScreen,
             "SFML works!",
-            sf::Style::Default, settings);
+            sf::Style::Default,
+            settings);
 
     Application application(window);
+    window.setVerticalSyncEnabled(false);
     application.test();
 
 
@@ -42,7 +42,7 @@ void Application::test() {
     sf::Text text;
     text.setFont(font);
     text.setFillColor(sf::Color::Red);
-    text.setCharacterSize(32);
+    text.setCharacterSize(128);
     text.setPosition(0, 64);
 
     sf::Text currentMosPosX;
@@ -66,76 +66,103 @@ void Application::test() {
     view.setSize(window->getSize().x, window->getSize().y);
     view.setCenter(window->getSize().x / 2.f, window->getSize().y / 2.f);
 
+    MapEditor mapEditor(*window);
+    mapEditor.setup();
+
     window->setView(view);
     PlayerMovement player1;
 
 
     while (window->isOpen()) {
-        window->clear();
-
         window->setView(view);
+        window->clear(sf::Color(sf::Color::White));
+
         chunkManagement();
 
         window->draw(text);
         window->draw(currentMosPosX);
         window->draw(currentMosPosY);
 
-
+        mapEditor.draw();
+        window->setView(view);
         window->display();
 
         while (window->pollEvent(event)) {
+
             if (event.type == sf::Event::Closed) {
                 window->close();
-            } else if (event.type == sf::Event::MouseWheelScrolled) {
+            }
+            if (event.type == sf::Event::MouseWheelScrolled) {
                 if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
-                    if (event.mouseWheelScroll.delta > 0) {
-                        view.zoom(1.1);
+                    if (event.mouseWheelScroll.delta < 0) {
+                        if (view.getSize().x <
+                            (Singleton::getInstance().chunkSize * Singleton::getInstance().chunkSize) * 4) {
+                            view.zoom(1.1);
+                        }
                     } else {
-                        view.zoom(0.9);
+                        if (view.getSize().x >
+                            Singleton::getInstance().chunkSize * Singleton::getInstance().chunkSize) {
+                            view.zoom(0.9);
+                        }
+
+                    }
+                }
+            }
+            if (event.type == sf::Event::MouseButtonPressed) {
+                if (event.mouseButton.button == sf::Mouse::Left) {
+                    Singleton::getInstance().tileToEdit = true;
+                }
+            }
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::Q) {
+                    if (!Singleton::getInstance().quitEditing) {
+                        Singleton::getInstance().quitEditing = true;
+                    } else {
+                        Singleton::getInstance().quitEditing = false;
                     }
                 }
             }
         }
+
 
         player1.move();
 
         if (player1.playerMovement.right) {
             view.move(10, 0);
             deltaOffSet.x += 10;
-
         }
-
         if (player1.playerMovement.left) {
             view.move(-10, 0);
             deltaOffSet.x -= 10;
-
         }
         if (player1.playerMovement.up) {
             view.move(0, -10);
             deltaOffSet.y -= 10;
-
         }
         if (player1.playerMovement.down) {
             view.move(0, 10);
             deltaOffSet.y += 10;
         }
-        if (std::abs(deltaOffSet.x) >= 1536 || std::abs(deltaOffSet.y) >= 1536) {
-            newChunks = true;
+        if (std::abs(deltaOffSet.x) >= (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize) ||
+            std::abs(deltaOffSet.y) >= (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize)) {
+            Singleton::getInstance().updateChunks = true;
             deltaOffSet.x = 0;
             deltaOffSet.y = 0;
         }
-
 
         text.setString(std::to_string(1.f / clock.restart().asSeconds()));
         text.setPosition(view.getCenter().x, view.getCenter().y + 100);
 
         sf::Vector2f mouse_world = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
 
-        currentMosPosX.setString(std::to_string((int) mouse_world.x / 1536));
-        currentMosPosY.setString(std::to_string((int) mouse_world.y / 1536));
+        currentMosPosX.setString(std::to_string(
+                (mouse_world.x) / (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize)));
+        currentMosPosY.setString(std::to_string(
+                mouse_world.y / (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize)));
         currentMosPosX.setPosition(view.getCenter().x, view.getCenter().y);
         currentMosPosY.setPosition(view.getCenter().x, view.getCenter().y + 50);
 
+        mapEditor.editTile();
     }
 }
 
@@ -150,8 +177,10 @@ void Application::chunkManagement() {
 
 void Application::rules() {
 
-    if (newChunks) {
+    if (Singleton::getInstance().updateChunks) {
+
         viewableChunk[0] = GameChunk(*(window), std::pair(-4, 0));
+
         viewableChunk[1] = GameChunk(*(window), std::pair(-3, 0));
         viewableChunk[2] = GameChunk(*(window), std::pair(-2, 0));
         viewableChunk[3] = GameChunk(*(window), std::pair(-1, 0));
@@ -204,24 +233,6 @@ void Application::rules() {
         viewableChunk[45] = GameChunk(*(window), std::pair(1, 2));
         viewableChunk[46] = GameChunk(*(window), std::pair(2, 2));
         viewableChunk[47] = GameChunk(*(window), std::pair(3, 2));
-        newChunks = false;
+        Singleton::getInstance().updateChunks = false;
     }
-
-}
-
-bool Application::insideView(const sf::View &view, sf::Vector2i point) {
-    if (getViewCoordinates(view).contains(point.x * 1536.f, point.y * 1536.f)) {
-        return true;
-    }
-    return false;
-}
-
-sf::FloatRect &Application::getViewCoordinates(const sf::View &view) {
-
-    viewCoorindates.left = view.getCenter().x - view.getSize().x / 2.f;
-    viewCoorindates.top = view.getCenter().y - view.getSize().y / 2.f;
-    viewCoorindates.width = view.getSize().x;
-    viewCoorindates.height = view.getSize().y;
-    return viewCoorindates;
-
 }

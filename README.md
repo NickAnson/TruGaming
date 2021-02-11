@@ -4,7 +4,7 @@ TruGaming is a 2d game written in c++ as a fun personal project. <br>
 The code for the game is written with elegance and improving with every update.
 
 A sample of the current version is show below:
-![PreviewFile](Preview/version0.15.gif)
+![PreviewFile](Preview/version0.41.gif)
 
 Sadly the icons for this game are not commercially free so I can not include them in the code at this time, however <br> in the near future there we be preconfigured binaries for Windows and Linux so you can enjoy it also!
 <br><br>

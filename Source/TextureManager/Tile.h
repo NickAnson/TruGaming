@@ -11,7 +11,7 @@
 class Tile {
 public:
 
-    Tile(std::string tileNameTemp, char animatedTemp, signed short int zHeightTemp,
+    Tile(unsigned short int tileNameTemp, unsigned short int animatedTemp, signed short int zHeightTemp,
          unsigned short int blockNumberTemp) {
         tileName = tileNameTemp;
         animated = animatedTemp;
@@ -20,15 +20,15 @@ public:
 
     }
 
-    std::string getTileName() const {
+    unsigned short int getTileName() const {
         return tileName;
     }
 
-    void setTileName(std::string tileNameTemp) {
+    void setTileName(unsigned short int tileNameTemp) {
         Tile::tileName = tileNameTemp;
     }
 
-    char getAnimated() const {
+    unsigned short int getAnimated() const {
         return animated;
     }
 
@@ -36,7 +36,7 @@ public:
         Tile::animated = animatedTemp;
     }
 
-    short getZHeight() const {
+    signed short int getZHeight() const {
         return zHeight;
     }
 
@@ -44,7 +44,7 @@ public:
         Tile::zHeight = zHeightTemp;
     }
 
-    unsigned short getBlockNumber() const {
+    unsigned short int getBlockNumber() const {
         return blockNumber;
     }
 
@@ -56,10 +56,10 @@ public:
 private:
     Tile() = delete;
 
-    char animated;
+    unsigned short int tileName;
+    unsigned short int animated;
     signed short int zHeight;
     unsigned short int blockNumber;
-    std::string tileName;
 
 };
 
