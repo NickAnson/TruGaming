@@ -1,238 +1,206 @@
 #include <SFML/Graphics.hpp>
-#include <thread>
-#include <unordered_set>
+
 #include "Application.h"
-#include "Movement/PlayerMovement.h"
-#include "GameManager/MapEditor/MapEditor.h"
+#include "GameManager/MapEditor/MapUpdater.h"
+#include "GameManager/GameChunks/ChunkFinder.h"
+#include "GameManager/Entities/Player.h"
+
+
+
 
 //this makes our program use high performance graphics by default on systems with more than one gpu
-#ifdef _WIN32
-extern "C" {
-__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
-__declspec(
-        dllexport) unsigned int AmdPowerXpressRequestHighPerformance = 0x1;
-}
-#endif
+
 
 
 int main() {
-
     sf::ContextSettings settings;
+    settings.antialiasingLevel = 0;
+    //    settings.sRgbCapable = false;
+    //    settings.depthBits = 8;
+    //    settings.minorVersion = 3;
 
     sf::RenderWindow window(
             Singleton::getInstance().computerScreen,
-            "SFML works!",
-            sf::Style::Default,
+            "TruGame",
+            sf::Style::Fullscreen,
             settings);
 
     Application application(window);
-    window.setVerticalSyncEnabled(false);
-    application.test();
 
+//    window.setVerticalSyncEnabled(true);
+//
+
+    application.setup();
+
+    application.run();
 
     return 0;
 }
 
-void Application::test() {
+
+void Application::setup() {
+    fpsCounter.setFillColor(sf::Color::Red);
+    fpsCounter.setSize(128);
+    fpsCounter.setPosition(sf::Vector2i(0, 64));
+
+    mosPosXText.setFillColor(sf::Color::Red);
+    mosPosXText.setSize(64);
+
+    mosPosYText.setFillColor(sf::Color::Red);
+    mosPosYText.setSize(64);
+    mosPosYText.setPosition(sf::Vector2i(0, 128));
+
+    gameView.setSize(sf::Vector2f(window->getSize().x, window->getSize().y));
+    Singleton::getInstance().defaultPlayerView = gameView;
+
+}
+
+
+void Application::run() {
+    nearbyOldChunks.resize(25);
+
+    MapUpdater mapUpdater("map_0");
+    mapUpdater.updateMap();
+
+    mouse_world = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+//    std::vector<sf::Sprite> playerSprites;
+
+
+    Player player;
+    player.setPosition(0, 0);
+    player.setView(gameView);
 
     sf::Clock clock;
 
-    sf::Font font;
-    font.loadFromFile("../Dependencies/Fonts/arial.ttf");
-    sf::Text text;
-    text.setFont(font);
-    text.setFillColor(sf::Color::Red);
-    text.setCharacterSize(128);
-    text.setPosition(0, 64);
-
-    sf::Text currentMosPosX;
-    currentMosPosX.setFont(font);
-    currentMosPosX.setFillColor(sf::Color::Red);
-    currentMosPosX.setCharacterSize(64);
-
-    sf::Text currentMosPosY;
-    currentMosPosY.setFont(font);
-    currentMosPosY.setFillColor(sf::Color::Red);
-    currentMosPosY.setCharacterSize(64);
-    currentMosPosY.setPosition(
-            currentMosPosX.getPosition().x,
-            currentMosPosX.getPosition().y + 32
-    );
-
     sf::Event event{};
+    sf::Clock clock1;
 
+    sf::Vector2f prevPos{0, 0};
+    sf::Vector2f curPos{0, 0};
+    curPos = gameView.getCenter();
 
-    sf::View view;
-    view.setSize(window->getSize().x, window->getSize().y);
-    view.setCenter(window->getSize().x / 2.f, window->getSize().y / 2.f);
+    sf::Clock clock3;
 
-    MapEditor mapEditor(*window);
-    mapEditor.setup();
-
-    window->setView(view);
-    PlayerMovement player1;
-
+    animationClock.restart();
 
     while (window->isOpen()) {
-        window->setView(view);
-        window->clear(sf::Color(sf::Color::White));
-
-        chunkManagement();
-
-        window->draw(text);
-        window->draw(currentMosPosX);
-        window->draw(currentMosPosY);
-
-        mapEditor.draw();
-        window->setView(view);
-        window->display();
-
         while (window->pollEvent(event)) {
 
             if (event.type == sf::Event::Closed) {
                 window->close();
             }
+
             if (event.type == sf::Event::MouseWheelScrolled) {
                 if (event.mouseWheelScroll.wheel == sf::Mouse::VerticalWheel) {
                     if (event.mouseWheelScroll.delta < 0) {
-                        if (view.getSize().x <
-                            (Singleton::getInstance().chunkSize * Singleton::getInstance().chunkSize) * 4) {
-                            view.zoom(1.1);
-                        }
+                        gameView.zoom(2);
                     } else {
-                        if (view.getSize().x >
-                            Singleton::getInstance().chunkSize * Singleton::getInstance().chunkSize) {
-                            view.zoom(0.9);
-                        }
+                        gameView.zoom(0.5);
 
-                    }
-                }
-            }
-            if (event.type == sf::Event::MouseButtonPressed) {
-                if (event.mouseButton.button == sf::Mouse::Left) {
-                    Singleton::getInstance().tileToEdit = true;
-                }
-            }
-            if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::Q) {
-                    if (!Singleton::getInstance().quitEditing) {
-                        Singleton::getInstance().quitEditing = true;
-                    } else {
-                        Singleton::getInstance().quitEditing = false;
                     }
                 }
             }
         }
 
+        prevPos = curPos;
+        Singleton::getInstance().dt = clock1.restart().asSeconds();
+        player.move(Singleton::getInstance().dt * 1000.0);
+        player.setPosition(gameView.getCenter().x - player.getSprite().getTexture()->getSize().x / 2,
+                           gameView.getCenter().y - player.getSprite().getTexture()->getSize().y / 2);
+        curPos = gameView.getCenter();
+        deltaOffSet += curPos - prevPos;
 
-        player1.move();
 
-        if (player1.playerMovement.right) {
-            view.move(10, 0);
-            deltaOffSet.x += 10;
-        }
-        if (player1.playerMovement.left) {
-            view.move(-10, 0);
-            deltaOffSet.x -= 10;
-        }
-        if (player1.playerMovement.up) {
-            view.move(0, -10);
-            deltaOffSet.y -= 10;
-        }
-        if (player1.playerMovement.down) {
-            view.move(0, 10);
-            deltaOffSet.y += 10;
-        }
-        if (std::abs(deltaOffSet.x) >= (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize) ||
-            std::abs(deltaOffSet.y) >= (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize)) {
-            Singleton::getInstance().updateChunks = true;
+        if (std::abs(deltaOffSet.x) >=
+            (Singleton::chunkSize * Singleton::tileSize)) {
             deltaOffSet.x = 0;
+            Singleton::getInstance().updateChunks = true;
+        }
+        if (std::abs(deltaOffSet.y) >=
+            (Singleton::chunkSize * Singleton::tileSize)) {
             deltaOffSet.y = 0;
+            Singleton::getInstance().updateChunks = true;
         }
 
-        text.setString(std::to_string(1.f / clock.restart().asSeconds()));
-        text.setPosition(view.getCenter().x, view.getCenter().y + 100);
+        updateChunkInfo();
 
-        sf::Vector2f mouse_world = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+        updateFPS(clock, gameView);
 
-        currentMosPosX.setString(std::to_string(
-                (mouse_world.x) / (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize)));
-        currentMosPosY.setString(std::to_string(
-                mouse_world.y / (Singleton::getInstance().chunkSize * Singleton::getInstance().tileSize)));
-        currentMosPosX.setPosition(view.getCenter().x, view.getCenter().y);
-        currentMosPosY.setPosition(view.getCenter().x, view.getCenter().y + 50);
+        updateChunkText(gameView);
 
-        mapEditor.editTile();
+        if (Singleton::getInstance().updateChunks) {
+            updateChunks();
+            Singleton::getInstance().updateChunks = false;
+        }
+
+        window->clear();
+        window->setView(gameView);
+
+        updateAnimationTiles();
+
+        drawChunks(window);
+
+//
+        window->draw(fpsCounter.getText());
+        window->draw(mosPosXText.getText());
+        window->draw(mosPosYText.getText());
+
+        window->draw(player.getSprite());
+
+        window->display();
+
+//        dt = clock.restart();
+
     }
 }
 
-void Application::chunkManagement() {
+void Application::updateFPS(sf::Clock &clock, sf::View &view) {
+    fpsCounter.setString(std::to_string(1.f / clock.restart().asSeconds()));
+    fpsCounter.setPosition(sf::Vector2i(view.getCenter().x, view.getCenter().y + 100));
+}
 
-    rules();
+void Application::updateChunkText(sf::View &gameFrame) {
 
-    for (auto &i : viewableChunk) {
-        i.draw();
+    mouse_world = window->mapPixelToCoords(sf::Mouse::getPosition(*window));
+
+    mosPosXText.setString(std::to_string(currentChunk.first) + "T");
+    mosPosYText.setString(std::to_string(currentChunk.second));
+
+    mosPosXText.setPosition(
+            sf::Vector2i(gameFrame.getCenter().x, gameFrame.getCenter().y));
+    mosPosYText.setPosition(
+            sf::Vector2i(gameFrame.getCenter().x, gameFrame.getCenter().y + 50));
+}
+
+void Application::updateChunks() {
+    nearbyNewChunks = ChunkFinder::find(4, currentChunk);
+    std::vector<GameChunk>().swap(gameChunksAroundPlayer);
+
+    for (auto &i : nearbyNewChunks) {
+        gameChunksAroundPlayer.emplace_back(i, "map_0");
+    }
+
+}
+
+void Application::drawChunks(sf::RenderWindow *renderWindow) {
+    for (auto &i : gameChunksAroundPlayer) {
+        renderWindow->draw(i);
     }
 }
 
-void Application::rules() {
+void Application::updateChunkInfo() {
+    currentChunk.first = (window->getView().getCenter().x) /
+                         (Singleton::chunkSize * Singleton::tileSize);
+    currentChunk.second = (window->getView().getCenter().y) /
+                          (Singleton::chunkSize * Singleton::tileSize);
 
-    if (Singleton::getInstance().updateChunks) {
+}
 
-        viewableChunk[0] = GameChunk(*(window), std::pair(-4, 0));
-
-        viewableChunk[1] = GameChunk(*(window), std::pair(-3, 0));
-        viewableChunk[2] = GameChunk(*(window), std::pair(-2, 0));
-        viewableChunk[3] = GameChunk(*(window), std::pair(-1, 0));
-        viewableChunk[4] = GameChunk(*(window), std::pair(0, 0));
-        viewableChunk[5] = GameChunk(*(window), std::pair(1, 0));
-        viewableChunk[6] = GameChunk(*(window), std::pair(2, 0));
-        viewableChunk[7] = GameChunk(*(window), std::pair(3, 0));
-
-        viewableChunk[8] = GameChunk(*(window), std::pair(-4, -3));
-        viewableChunk[9] = GameChunk(*(window), std::pair(-3, -3));
-        viewableChunk[10] = GameChunk(*(window), std::pair(-2, -3));
-        viewableChunk[11] = GameChunk(*(window), std::pair(-1, -3));
-        viewableChunk[12] = GameChunk(*(window), std::pair(0, -3));
-        viewableChunk[13] = GameChunk(*(window), std::pair(1, -3));
-        viewableChunk[14] = GameChunk(*(window), std::pair(2, -3));
-        viewableChunk[15] = GameChunk(*(window), std::pair(3, -3));
-
-        viewableChunk[16] = GameChunk(*(window), std::pair(-4, -2));
-        viewableChunk[17] = GameChunk(*(window), std::pair(-3, -2));
-        viewableChunk[18] = GameChunk(*(window), std::pair(-2, -2));
-        viewableChunk[19] = GameChunk(*(window), std::pair(-1, -2));
-        viewableChunk[20] = GameChunk(*(window), std::pair(0, -2));
-        viewableChunk[21] = GameChunk(*(window), std::pair(1, -2));
-        viewableChunk[22] = GameChunk(*(window), std::pair(2, -2));
-        viewableChunk[23] = GameChunk(*(window), std::pair(3, -2));
-
-        viewableChunk[24] = GameChunk(*(window), std::pair(-4, -1));
-        viewableChunk[25] = GameChunk(*(window), std::pair(-3, -1));
-        viewableChunk[26] = GameChunk(*(window), std::pair(-2, -1));
-        viewableChunk[27] = GameChunk(*(window), std::pair(-1, -1));
-        viewableChunk[28] = GameChunk(*(window), std::pair(0, -1));
-        viewableChunk[29] = GameChunk(*(window), std::pair(1, -1));
-        viewableChunk[30] = GameChunk(*(window), std::pair(2, -1));
-        viewableChunk[31] = GameChunk(*(window), std::pair(3, -1));
-
-        viewableChunk[32] = GameChunk(*(window), std::pair(-4, 1));
-        viewableChunk[33] = GameChunk(*(window), std::pair(-3, 1));
-        viewableChunk[34] = GameChunk(*(window), std::pair(-2, 1));
-        viewableChunk[35] = GameChunk(*(window), std::pair(-1, 1));
-        viewableChunk[36] = GameChunk(*(window), std::pair(0, 1));
-        viewableChunk[37] = GameChunk(*(window), std::pair(1, 1));
-        viewableChunk[38] = GameChunk(*(window), std::pair(2, 1));
-        viewableChunk[39] = GameChunk(*(window), std::pair(3, 1));
-
-        viewableChunk[40] = GameChunk(*(window), std::pair(-4, 2));
-        viewableChunk[41] = GameChunk(*(window), std::pair(-3, 2));
-        viewableChunk[42] = GameChunk(*(window), std::pair(-2, 2));
-        viewableChunk[43] = GameChunk(*(window), std::pair(-1, 2));
-        viewableChunk[44] = GameChunk(*(window), std::pair(0, 2));
-        viewableChunk[45] = GameChunk(*(window), std::pair(1, 2));
-        viewableChunk[46] = GameChunk(*(window), std::pair(2, 2));
-        viewableChunk[47] = GameChunk(*(window), std::pair(3, 2));
-        Singleton::getInstance().updateChunks = false;
+void Application::updateAnimationTiles() {
+    float timePass = animationClock.restart().asMilliseconds();
+    for (auto &i : gameChunksAroundPlayer) {
+        i.incrementUpdateTime(timePass);
+        i.updateTilesIfNeeded();
     }
 }
+
