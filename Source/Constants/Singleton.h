@@ -9,16 +9,11 @@
 #include <cmath>
 #include <iostream>
 #include "../../Dependencies/Nlohmann/json.hpp"
-
+#include "../GameManager/States/State.h"
 class Singleton {
 
 public:
-//    template<typename T>
-//    T roundFloorMultiple(T value, T multiple) {
-//        if (multiple == 0) return value;
-//        return static_cast<T>(std::floor(static_cast<double>(value) / static_cast<double>(multiple)) *
-//                              static_cast<double>(multiple));
-//    }
+
 
     static Singleton &getInstance() {
         static Singleton instance;
@@ -32,6 +27,7 @@ public:
     std::vector<sf::Sprite> defaultCharacterRightSprites;
     std::vector<sf::Sprite> defaultCharacterLeftSprites;
 
+    bool debug = false;
 
     std::vector<sf::Texture> tempTexture;
 
@@ -40,21 +36,26 @@ public:
     static const int chunkSize = 32;
     static const int tileSize = 48;
 
+
     float dt = 20.f;
 
-    bool quitEditing = false;
+    float zoomLevel = 1.f;
 
-    constexpr static const float movementSpeed = 100.f;
+    constexpr static const float movementSpeed = 0.1f;
 
     sf::View defaultPlayerView;
 
     bool updateChunks = true;
+    State::popUpView popUpEscape{State::popUpView::popup_NONE};
 
 private:
 
     Singleton() {
-        tilemap.loadFromFile("../Source/TextureManager/TileMap/atlas_" + std::to_string(tileSize) + "x.png");
 
+        tilemap.loadFromFile("../Source/TextureManager/TileMap/atlas_" + std::to_string(tileSize) + "x.png");
+        tilemap.setSmooth(false);
+        tilemap.setRepeated(false);
+        tilemap.setSrgb(false);
         defaultCharacterDownSprites.resize(4);
         defaultCharacterUpSprites.resize(4);
         defaultCharacterLeftSprites.resize(4);
@@ -113,6 +114,7 @@ private:
         defaultCharacterDownSprites.at(3).setTexture(tempTexture.at(15));
 
     };
+
     static Singleton instance;
 
     int currentError = 0;
@@ -124,7 +126,7 @@ public:
 
     sf::VideoMode computerScreen = sf::VideoMode::getDesktopMode();
 
-    void print_err(std::string index = "") {
+    void print_err(const std::string &index = "") {
         std::cout << "HERE " << index << " : " << currentError << std::endl;
         currentError++;
     }

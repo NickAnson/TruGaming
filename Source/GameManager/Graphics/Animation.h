@@ -7,14 +7,22 @@
 
 class Animation {
 public:
+    explicit Animation(int tileToAnimate, std::string &file);
 
-    bool tileNeedsUpdate(unsigned long long tileID, double msTimeNeeded);
+    Animation() = delete;
 
+    unsigned long long &getCurrentTile();
+
+    void update(float time);
 
 private:
+    unsigned long long currentTileIndex = 0;
+    unsigned long long currentTile = 0;
+    float dt = 0;
+    std::vector<int> animationTiles;
+    std::vector<float> animationTimes;
 
-
+    nlohmann::json jsonInput;
 };
-
 
 #endif //TRUGAMING_ANIMATION_H

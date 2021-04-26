@@ -13,6 +13,7 @@
 #include "Tilemap.h"
 #include <filesystem>
 #include <fstream>
+#include "../States/State.h"
 
 
 class GameChunk : public sf::Drawable {
@@ -30,7 +31,7 @@ public:
 //    void setUpdateDelay(double time) {
 //        this->passedTime = time;
 //    }
-    void incrementUpdateTime(double time) {
+    void incrementUpdateTime(double time) const {
         for (auto &i : referenceToAnimatedTiles) {
             for (auto &ii : i) {
                 ii.second.second.second.at(ii.first.first) += time;
@@ -38,28 +39,29 @@ public:
         }
     }
 
+    bool is_digits(const std::string &str) {
+        return std::all_of(str.begin(), str.end(), ::isdigit); // C++11
+    }
+
 //    double getUpdateTime() {
 //        return this->passedTime;
 //    }
 
-    void updateTilesIfNeeded();
+    void updateTilesIfNeeded() const;
 
 private:
 
-    double timeToUpdate;
-    bool updated = false;
 
     void draw(sf::RenderTarget &target, sf::RenderStates states) const override;
 
     std::string fileSystemPath = "../Source/FileSystem/";
 
-    static std::size_t number_of_files_in_directory(const std::filesystem::path &path);
 
     std::string fileName;
 
     std::vector<std::vector<Entity>> chunkWithLayers;
 
-    std::vector<
+    mutable std::vector<
             std::vector<
                     std::pair<
                             std::pair<unsigned long long, unsigned long long>,
@@ -79,19 +81,15 @@ private:
 
 //    std::vector<std::vector<std::reference_wrapper<Entity>>> animatedTiles;
 
-    unsigned long long tileID;
-    std::vector<int> animationTiles;
-    std::vector<float> animationTimes;
-    std::pair<double, double> position;
-    sf::Texture *texture;
 
-    std::vector<std::vector<int>> tiles;
-    std::vector<Tilemap> tilemap;
+    mutable std::vector<std::vector<int>> tiles;
+    mutable std::vector<Tilemap> tilemap;
+
+    State::gameChunkStates gameChunkState{State::gameChunkStates::chunk_NORMAL};
 
     std::ifstream fileInput;
     std::string file;
 
-    bool animate = false;
 };
 
 

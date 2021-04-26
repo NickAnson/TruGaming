@@ -1,19 +1,16 @@
-//
-// Created by Nick on 2/24/2021.
-//
-
 #ifndef TRUGAMING_GAMETEXT_H
 #define TRUGAMING_GAMETEXT_H
 
 
-#include <string>
-#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
+#include <SFML/Graphics/Transformable.hpp>
+#include <SFML/Graphics/Drawable.hpp>
 #include <SFML/Graphics/Text.hpp>
 
-class GameText {
+class GameText : public sf::Drawable, public sf::Transformable {
 public:
     enum FONTS {
-        ARIAL
+        ARIAL, GAME_FONT_0
     };
 
     explicit GameText(FONTS fontChoose);
@@ -22,10 +19,13 @@ public:
 
     void setSize(int size);
 
-    void setPosition(sf::Vector2i point);
-
     void setString(std::string newText);
 
+    void setOutlineColor(sf::Color outlineCol);
+
+    void setOutlineThickness(float size);
+
+    sf::Rect<float> getSize();
 
     sf::Text &getText();
 
@@ -35,6 +35,10 @@ private:
     sf::Font font;
     sf::Text text;
 
+    void draw(sf::RenderTarget &target, sf::RenderStates states) const override {
+        states.transform *= getTransform();
+        target.draw(text, states);
+    }
 };
 
 

@@ -14,13 +14,14 @@ public:
         UP, DOWN, LEFT, RIGHT
     };
 
-    Player(
+    explicit Player(
             std::vector<sf::Sprite> &upSpriteTEMP = Singleton::getInstance().defaultCharacterUpSprites,
             std::vector<sf::Sprite> &downSpriteTEMP = Singleton::getInstance().defaultCharacterDownSprites,
             std::vector<sf::Sprite> &leftSpriteTEMP = Singleton::getInstance().defaultCharacterLeftSprites,
             std::vector<sf::Sprite> &rightSpriteTEMP = Singleton::getInstance().defaultCharacterRightSprites,
             sf::Vector2f positionTemp = sf::Vector2f(0, 0), CurrentDirection playerDirectionTEMP = DOWN,
-            double animationTimeTEMP = 500, sf::View &currentViewTemp = Singleton::getInstance().defaultPlayerView) {
+            double animationTimeTEMP = 500,
+            sf::View &currentViewTemp = Singleton::getInstance().defaultPlayerView) {
 
         this->spriteDraw = downSpriteTEMP.at(1);
         this->position = positionTemp;
@@ -35,10 +36,16 @@ public:
         playerAnimationTime = animationTimeTEMP;
 
         currentView = &currentViewTemp;
+
+        newChunk = {0, 0};
+        oldChunk = {INT32_MAX, INT32_MAX};
     }
 
 
 private:
+    const std::string fileSystemPath = "../Source/FileSystem/";
+    std::string currentMap = "";
+
     double playerAnimationTime;
     double animationUpTime = 0;
     double animationDownTime = 0;
@@ -49,6 +56,8 @@ private:
     unsigned short int currentStateOfAnimationLeft = 1;
     unsigned short int currentStateOfAnimationRight = 1;
 
+    std::string nextWorld = "";
+
     bool erased = false;
     std::vector<CurrentDirection> playerNewDirection;
     std::vector<CurrentDirection> playerOldDirection;
@@ -58,16 +67,19 @@ private:
     std::vector<sf::Sprite> rightSprite;
     std::vector<sf::Sprite> leftSprite;
 
-    sf::Sprite upResting;
-    sf::Sprite downResting;
-    sf::Sprite leftResting;
-    sf::Sprite rightResting;
+    std::vector<std::pair<sf::Rect<float>, std::string>> newWorld;
+    std::vector<sf::Rect<float>> unwalkable;
+    std::pair<float, float> newPos;
+    std::pair<int, int> oldChunk;
+    std::pair<int, int> newChunk;
+
+    std::ifstream interactionFile;
+    nlohmann::json jsonInteractionFile;
 
     sf::View *currentView;
 
-    sf::Vector2f lastPosition{0.f, 0.f};
 
-    sf::Sprite spriteDraw;
+    mutable sf::Sprite spriteDraw;
 
     sf::Vector2f position;
 
@@ -93,11 +105,19 @@ private:
     }
 
 public:
+    std::string getNextWorld() {
+        return this->nextWorld;
+    }
+
+    void setNextWorld(std::string nextWorldTemp) {
+        this->nextWorld = nextWorldTemp;
+    }
+
     void setView(sf::View &view) {
         currentView = &view;
     }
 
-    sf::Sprite &getSprite() {
+    sf::Sprite &getSprite() const {
         return spriteDraw;
     }
 
@@ -123,14 +143,14 @@ public:
     }
 
     void addElapsedTime(double timeElapsed, std::vector<CurrentDirection> &directionToElapse) {
-        for (unsigned long long i = 0; i < directionToElapse.size(); i++) {
-            if (directionToElapse.at(i) == UP) {
+        for (auto &i : directionToElapse) {
+            if (i == UP) {
                 animationUpTime += timeElapsed;
-            } else if (directionToElapse.at(i) == DOWN) {
+            } else if (i == DOWN) {
                 animationDownTime += timeElapsed;
-            } else if (directionToElapse.at(i) == LEFT) {
+            } else if (i == LEFT) {
                 animationLeftTime += timeElapsed;
-            } else if (directionToElapse.at(i) == RIGHT) {
+            } else if (i == RIGHT) {
                 animationRightTime += timeElapsed;
             }
         }
@@ -138,8 +158,79 @@ public:
 
     void truncatePos() {
         spriteDraw.setPosition(std::floor(spriteDraw.getPosition().x), std::floor(spriteDraw.getPosition().y));
-        lastPosition.x = std::floor(lastPosition.x);
-        lastPosition.y = std::floor(lastPosition.y);
+    }
+
+    void updatePos(const std::pair<float, float> &newPosTemp) {
+        this->newPos = newPosTemp;
+        newChunk.first = this->newPos.first / 1536.f;
+        newChunk.second = this->newPos.second / 1536.f;
+    }
+
+    bool isNewChunk() {
+        if (newChunk.first - oldChunk.first != 0 && newChunk.second - oldChunk.second) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void updateInteractionTiles() {
+        if (!std::filesystem::exists(fileSystemPath + "/" + currentMap + "/" +
+                                     std::to_string(newChunk.first) + "_" + std::to_string(newChunk.second))) {
+
+            std::filesystem::create_directory(fileSystemPath + "/" + currentMap + "/" +
+                                              std::to_string(newChunk.first) + "_" + std::to_string(newChunk.second));
+        }
+        interactionFile.open(fileSystemPath + "/" + currentMap + "/" +
+                             std::to_string(newChunk.first) + "_" + std::to_string(newChunk.second) + "/" +
+                             "custom.json");
+
+        if (!interactionFile) {
+            std::cout << "ERROR: CHUNK FILE CANT BE EDITED" << std::endl;
+            exit(-1);
+        }
+
+        interactionFile >> jsonInteractionFile;
+
+        std::vector<sf::Rect<float>>().swap(this->unwalkable);
+        for (auto &i : jsonInteractionFile["walk_false"]) {
+            unwalkable.emplace_back(sf::Rect<float>(i["x"], i["y"], i["width"], i["height"]));
+        }
+
+        std::vector<std::pair<sf::Rect<float>, std::string>>().swap(this->newWorld);
+        for (auto &i : jsonInteractionFile["enter_building"]) {
+            newWorld.emplace_back(std::pair(sf::Rect<float>(i["x"], i["y"], i["width"], i["height"]), i["map"]));
+        }
+
+        interactionFile.close();
+    }
+
+    bool validNextPos(sf::Vector2f nextPos) {
+        for (auto &i : unwalkable) {
+            if (
+                    i.contains({nextPos.x + 24, nextPos.y})
+                    || i.contains({nextPos.x - 24, nextPos.y})
+                    //                    || i.contains({nextPos.x + 24, nextPos.y})
+                    //                    || i.contains({nextPos.x - 24, nextPos.y })
+                    || i.contains({nextPos.x, nextPos.y})) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool toANewWorld(sf::Vector2f currentPos) {
+        for (auto &i : newWorld) {
+            if (i.first.contains(currentPos)) {
+                this->nextWorld = i.second;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void updateCurrentMap(std::string currentNewMap) {
+        this->currentMap = currentNewMap;
     }
 
     void move(double timeElapsed) {
@@ -175,6 +266,11 @@ public:
         if (playerNewDirection.empty()) {
 
         } else if (playerNewDirection.size() == 1) {
+            updatePos({currentView->getCenter().x, currentView->getCenter().y});
+            if (isNewChunk()) {
+                oldChunk = newChunk;
+                updateInteractionTiles();
+            }
 
             if (playerNewDirection.front() == UP) {
                 if (animationUpTime >= playerAnimationTime) {
@@ -186,11 +282,33 @@ public:
                     }
 
                     spriteDraw = upSprite.at(currentStateOfAnimationUp);
-                    currentView->move(0, -Singleton::movementSpeed * Singleton::getInstance().dt);
+
+                    if (validNextPos(
+                            {currentView->getCenter().x + 0,
+                             currentView->getCenter().y + (-Singleton::movementSpeed * Singleton::getInstance().dt)
+                            }
+                    )) {
+                        currentView->move(0, -Singleton::movementSpeed * Singleton::getInstance().dt);
+
+
+                    }
                     animationUpTime = 0;
+
+                    toANewWorld(currentView->getCenter());
+
                 } else {
                     spriteDraw = upSprite.at(currentStateOfAnimationUp);
-                    currentView->move(0, -Singleton::movementSpeed * Singleton::getInstance().dt);
+                    if (validNextPos(
+                            {currentView->getCenter().x + 0,
+                             currentView->getCenter().y + (-Singleton::movementSpeed * Singleton::getInstance().dt)
+                            }
+                    )) {
+
+                        currentView->move(0, -Singleton::movementSpeed * Singleton::getInstance().dt);
+                    }
+
+                    toANewWorld(currentView->getCenter());
+
                 }
 
             } else if (playerNewDirection.front() == DOWN) {
@@ -201,11 +319,30 @@ public:
                         currentStateOfAnimationDown++;
                     }
                     spriteDraw = downSprite.at(currentStateOfAnimationDown);
-                    currentView->move(0, Singleton::movementSpeed * Singleton::getInstance().dt);
+                    if (validNextPos(
+                            {currentView->getCenter().x + 0,
+                             currentView->getCenter().y + (Singleton::movementSpeed * Singleton::getInstance().dt)
+                            }
+                    )) {
+
+                        currentView->move(0, Singleton::movementSpeed * Singleton::getInstance().dt);
+                    }
                     animationDownTime = 0;
+
+                    toANewWorld(currentView->getCenter());
+
                 } else {
                     spriteDraw = downSprite.at(currentStateOfAnimationDown);
-                    currentView->move(0, Singleton::movementSpeed * Singleton::getInstance().dt);
+                    if (validNextPos(
+                            {currentView->getCenter().x + 0,
+                             currentView->getCenter().y + (Singleton::movementSpeed * Singleton::getInstance().dt)
+                            }
+                    )) {
+
+                        currentView->move(0, Singleton::movementSpeed * Singleton::getInstance().dt);
+                    }
+
+                    toANewWorld(currentView->getCenter());
                 }
 
             } else if (playerNewDirection.front() == LEFT) {
@@ -216,11 +353,34 @@ public:
                         currentStateOfAnimationLeft++;
                     }
                     spriteDraw = leftSprite.at(currentStateOfAnimationLeft);
-                    currentView->move(-Singleton::movementSpeed * Singleton::getInstance().dt, 0);
+
+                    if (validNextPos(
+                            {currentView->getCenter().x + (-Singleton::movementSpeed * Singleton::getInstance().dt),
+                             currentView->getCenter().y + 0,
+                            }
+                    )) {
+
+                        currentView->move((-Singleton::movementSpeed * Singleton::getInstance().dt),
+                                          0);
+                    }
                     animationLeftTime = 0;
+
+                    toANewWorld(currentView->getCenter());
+
                 } else {
                     spriteDraw = leftSprite.at(currentStateOfAnimationLeft);
-                    currentView->move(-Singleton::movementSpeed * Singleton::getInstance().dt, 0);
+                    if (validNextPos(
+                            {currentView->getCenter().x + (-Singleton::movementSpeed * Singleton::getInstance().dt),
+                             currentView->getCenter().y + 0,
+                            }
+                    )) {
+
+                        currentView->move((-Singleton::movementSpeed * Singleton::getInstance().dt),
+                                          0);
+                    }
+
+                    toANewWorld(currentView->getCenter());
+
                 }
             } else if (playerNewDirection.front() == RIGHT) {
                 if (animationRightTime >= playerAnimationTime) {
@@ -230,11 +390,33 @@ public:
                         currentStateOfAnimationRight++;
                     }
                     spriteDraw = rightSprite.at(currentStateOfAnimationRight);
-                    currentView->move(Singleton::movementSpeed * Singleton::getInstance().dt, 0);
+                    if (validNextPos(
+                            {currentView->getCenter().x + (Singleton::movementSpeed * Singleton::getInstance().dt),
+                             currentView->getCenter().y + 0,
+                            }
+                    )) {
+
+                        currentView->move((Singleton::movementSpeed * Singleton::getInstance().dt),
+                                          0);
+                    }
                     animationRightTime = 0;
+
+                    toANewWorld(currentView->getCenter());
+
                 } else {
                     spriteDraw = rightSprite.at(currentStateOfAnimationRight);
-                    currentView->move(Singleton::movementSpeed * Singleton::getInstance().dt, 0);
+                    if (validNextPos(
+                            {currentView->getCenter().x + (Singleton::movementSpeed * Singleton::getInstance().dt),
+                             currentView->getCenter().y + 0,
+                            }
+                    )) {
+
+                        currentView->move((Singleton::movementSpeed * Singleton::getInstance().dt),
+                                          0);
+                    }
+
+                    toANewWorld(currentView->getCenter());
+
                 }
             }
         }

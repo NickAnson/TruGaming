@@ -27,19 +27,6 @@ public:
         this->spritePosition = {this->tileID % (this->textureMap.getSize().x / Singleton::tileSize),
                                 this->tileID / (this->textureMap.getSize().y / Singleton::tileSize)
         };
-        entity[0].position = sf::Vector2f(this->position.first, this->position.second);
-        entity[1].position = sf::Vector2f(this->position.first + Singleton::tileSize, this->position.second);
-        entity[2].position = sf::Vector2f(this->position.first + Singleton::tileSize,
-                                          this->position.second + Singleton::tileSize);
-        entity[3].position = sf::Vector2f(this->position.first, this->position.second + Singleton::tileSize);
-
-        entity[0].texCoords = sf::Vector2f(this->spritePosition.first, this->spritePosition.second);
-        entity[1].texCoords = sf::Vector2f(this->spritePosition.first + Singleton::tileSize,
-                                           this->spritePosition.second);
-        entity[2].texCoords = sf::Vector2f(this->spritePosition.first + Singleton::tileSize,
-                                           this->spritePosition.second + Singleton::tileSize);
-        entity[3].texCoords = sf::Vector2f(this->spritePosition.first,
-                                           this->spritePosition.second + Singleton::tileSize);
     }
 
     Entity() = delete;
